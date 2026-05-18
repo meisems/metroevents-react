@@ -45,6 +45,8 @@ export default function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  if (loading) return <div style={{padding: "100px", textAlign:"center"}}>Loading...</div>;
+
 // ─── BREAKPOINT HOOK ──────────────────────────────────────────────────────────
 function useBreakpoint() {
   const get = () => {
