@@ -11,6 +11,39 @@ if (typeof document !== "undefined") {
   }
 }
 
+export default function App() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setUser({
+          email: session.user.email,
+          name: session.user.user_metadata?.name || "Client",
+          role: "client",
+          id: session.user.id
+        });
+      }
+    });
+
+    // Listen for auth changes
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setUser({
+          email: session.user.email,
+          name: session.user.user_metadata?.name || "Client",
+          role: "client",
+          id: session.user.id
+        });
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
 // ─── BREAKPOINT HOOK ──────────────────────────────────────────────────────────
 function useBreakpoint() {
   const get = () => {
