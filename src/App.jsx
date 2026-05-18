@@ -13,7 +13,8 @@ if (typeof document !== "undefined") {
 
 export default function App() {
   const [user, setUser] = useState(null);
-
+  const [loading, setLoading] = useState(true);
+  
   useEffect(() => {
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
