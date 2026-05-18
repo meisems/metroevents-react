@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "./supabaseClient";
 
 if (typeof document !== "undefined") {
   const id = "me-fonts";
@@ -484,24 +485,82 @@ function SectionHeader({ title, sub, action }) {
 }
 
 // ─── LOGIN MODAL ──────────────────────────────────────────────────────────────
-function LoginModal({ onClose, onLogin, users, onRegister }) {
+function LoginModal({ onClose, onLogin }) {
   const [tab, setTab] = useState("login");
-  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [error, setError] = useState("");
-  const [reg, setReg] = useState({ name: "", email: "", password: "", confirm: "" }); const [regDone, setRegDone] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function submit(e) {
+  // For registration
+  const [reg, setReg] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [regDone, setRegDone] = useState(false);
+
+  // LOGIN FUNCTION
+  async function submit(e) {
     e.preventDefault();
-    const u = users.find(u => u.email === email && u.password === password);
-    if (u) { onLogin(u); onClose(); }
-    else setError("Invalid credentials. Try a demo account below.");
+    setLoading(true);
+    setError("");
+
+    const { data, error: err } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (err) {
+      setError(err.message);
+    } else {
+      const userData = {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.user_metadata?.name || email.split("@")[0],
+        role: "client",           // You can enhance this later with user roles
+      };
+      onLogin(userData);
+      onClose();
+    }
+    setLoading(false);
   }
-  function register(e) {
+
+  // REGISTER FUNCTION
+  async function register(e) {
     e.preventDefault();
-    if (!reg.name || !reg.email || !reg.password) { setError("Please fill all fields."); return; }
-    if (reg.password !== reg.confirm) { setError("Passwords do not match."); return; }
-    if (users.find(u => u.email === reg.email)) { setError("Email already registered."); return; }
-    onRegister({ email: reg.email, password: reg.password, role: "client", name: reg.name });
-    setRegDone(true); setError("");
+    setLoading(true);
+    setError("");
+
+    if (!reg.name || !reg.email || !reg.password) {
+      setError("Please fill all fields.");
+      setLoading(false);
+      return;
+    }
+    if (reg.password !== reg.confirm) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+    if (reg.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      setLoading(false);
+      return;
+    }
+
+    const { data, error: err } = await supabase.auth.signUp({
+      email: reg.email,
+      password: reg.password,
+      options: {
+        data: { name: reg.name }
+      }
+    });
+
+    if (err) {
+      setError(err.message);
+    } else {
+      setRegDone(true);
+      setError("");
+      // Optional: auto switch to login tab after success
+      // setTab("login");
+    }
+    setLoading(false);
   }
 
   return (
