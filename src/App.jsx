@@ -1101,6 +1101,27 @@ function AdminDashboard({ user, onLogout }) {
   const bp = useBreakpoint();
   const compact = bp !== "desktop";
   const unreadCount = notifications.filter(n => !n.read).length;
+  const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+
+  async function fetchEvents() {
+    setEventsLoading(true);
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('date', { ascending: true });
+
+    if (error) {
+      console.error("Error loading events:", error);
+    } else {
+      setEvents(data || []);
+    }
+    setEventsLoading(false);
+  }
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
 
   const allNavItems = [
     { id: "overview", label: "Dashboard", icon: "📊", roles: ["admin", "coordinator", "designer", "warehouse"] },
